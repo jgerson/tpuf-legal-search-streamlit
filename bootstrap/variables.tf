@@ -1,0 +1,41 @@
+variable "tfc_organization" {
+  description = "Your HCP Terraform organization name."
+  type        = string
+}
+
+variable "tfc_project" {
+  type    = string
+  default = "Default Project"
+}
+
+variable "tfc_hostname" {
+  type    = string
+  default = "app.terraform.io"
+}
+
+variable "workspace_name" {
+  type    = string
+  default = "legal-search-streamlit"
+}
+
+variable "vault_addr" {
+  description = "HCP Vault public address, including :8200."
+  type        = string
+}
+
+variable "vault_namespace" {
+  type    = string
+  default = "admin"
+}
+
+variable "vcs_repo" {
+  description = "Optional GitHub repo for VCS-driven runs, e.g. \"jgerson/tpuf-legal-search-streamlit\"."
+  type        = string
+  default     = ""
+}
+
+variable "vcs_oauth_token_id" {
+  description = "OAuth token ID of your HCP Terraform VCS connection. Needed only with vcs_repo."
+  type        = string
+  default     = ""
+}

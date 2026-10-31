@@ -1,0 +1,4 @@
+# Hobby project dependencies
+streamlit>=1.50
+turbopuffer>=3.0
+hvac>=2.3
