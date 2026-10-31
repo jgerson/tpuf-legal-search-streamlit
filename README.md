@@ -6,6 +6,8 @@ The same multi-tenant contract search as [tpuf-legal-search-aws](../tpuf-legal-s
 
 The difference is identity. Streamlit Cloud gives the app no cloud identity to prove to Vault, so the app starts from one credential, an AppRole role ID and secret ID. Everything after that is short-lived and comes from Vault.
 
+![Architecture](docs/architecture.svg)
+
 ## How the pieces fit
 
 ```
@@ -70,6 +72,15 @@ Running locally: `pip install -r requirements.txt`, copy the example to `.stream
 4. **Onboard a firm.** Add one to `terraform/terraform.tfvars`, push. After the run, the sidebar shows the new firm as *to seed* and a plan ("seed 1, delete 0"). Press **Sync with Terraform**.
 5. **Rotate the key.** Create a second turbopuffer key, `vault kv put` it, press **Re-read key now**. Version and key prefix change in the sidebar; search keeps working. Revoke the old key; the 401 handler covers anything still holding it.
 6. **Talk about secret zero.** The secret ID in Streamlit is long-lived (30 days here) and can't be bound to an IP, because Streamlit Cloud's egress isn't stable. On AWS, GCP or Kubernetes the app proves its identity with its platform role instead. That's the AWS version of this demo.
+
+## Running costs (approximate, October 2026)
+
+| Item | Cost |
+|---|---|
+| turbopuffer, Launch plan | $16/month minimum; this demo's usage is far below it |
+| HCP Vault Dedicated, Development tier | about $0.62 per cluster-hour, roughly $450 if left running all month. Create it for prep and demo days and delete it after; bootstrap plus a workspace run rebuilds the config in minutes |
+| HCP Terraform | Free tier covers 500 managed resources; this demo uses a handful per workspace |
+| Streamlit Community Cloud | Free |
 
 ## Trade-offs worth saying out loud
 

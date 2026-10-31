@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-label="Legal search on Streamlit">
+
+<style>
+  .bg{fill:#fbfaf7} .box{fill:#ffffff;stroke:#d9d4c7;stroke-width:1.2} .t{font:600 15px Inter,system-ui,sans-serif;fill:#1d2330}
+  .l{font:12.5px Inter,system-ui,sans-serif;fill:#4c5361} .mono{font:11.5px ui-monospace,Menlo,monospace;fill:#4c5361}
+  .a{stroke:#1f4e79;stroke-width:1.6;fill:none} .a.d{stroke-dasharray:5 4;stroke:#9a7b2f}
+  .al{font:11.5px Inter,system-ui,sans-serif;fill:#1f4e79} .al.d{fill:#8a6a1f}
+  .n{fill:#1f4e79} .n.d{fill:#9a7b2f} .nt{font:700 11px Inter,system-ui,sans-serif;fill:#fff}
+  .lane{font:700 11px Inter,system-ui,sans-serif;fill:#8a8f99;letter-spacing:.12em}
+  .vault{stroke:#ffd814;stroke-width:2} .tpuf{stroke:#6c63ff;stroke-width:2} .tfc{stroke:#7b42bc;stroke-width:2}
+  .aws{stroke:#ff9900;stroke-width:2} .st{stroke:#ff4b4b;stroke-width:2} .div{stroke:#e3ddd0;stroke-dasharray:3 4}
+  @media (prefers-color-scheme: dark){
+    .bg{fill:#14171d} .box{fill:#1b1f27;stroke:#2c323d} .t{fill:#e8e6e1} .l,.mono{fill:#a7adb8}
+    .a{stroke:#7fb0e0} .al{fill:#7fb0e0} .n{fill:#3d6fa0} .a.d{stroke:#d1b26a} .al.d{fill:#d1b26a} .n.d{fill:#9a7b2f}
+    .div{stroke:#2c323d}
+  }
+</style>
+<defs>
+  <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f4e79"/></marker>
+  <marker id="ahd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9a7b2f"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="900" height="540" rx="14"/>
+<text class="lane" x="20" y="22">DEPLOY TIME</text>
+<line class="div" x1="20" y1="292" x2="880" y2="292"/>
+<text class="lane" x="20" y="314">RUN TIME</text>
+<rect class="box " x="20" y="48" width="170" height="92" rx="10"/>
+<text class="t" x="32" y="71">You</text>
+<text class="l" xml:space="preserve" x="32" y="92">edit firms, git push</text>
+<text class="l" xml:space="preserve" x="32" y="109">generate secret ID</text>
+<text class="l" xml:space="preserve" x="32" y="126">paste into Streamlit</text>
+<rect class="box tfc" x="260" y="48" width="220" height="110" rx="10"/>
+<text class="t" x="272" y="71">HCP Terraform</text>
+<text class="l" xml:space="preserve" x="272" y="92">workspace</text>
+<text class="mono" xml:space="preserve" x="272" y="109">legal-search-streamlit</text>
+<text class="l" xml:space="preserve" x="272" y="126">Vault dynamic creds</text>
+<text class="l" xml:space="preserve" x="272" y="143">manages Vault only</text>
+<rect class="box vault" x="560" y="48" width="320" height="230" rx="10"/>
+<text class="t" x="572" y="71">HCP Vault</text>
+<text class="l" xml:space="preserve" x="572" y="92">JWT auth  → Terraform runs</text>
+<text class="l" xml:space="preserve" x="572" y="109">AppRole   → Streamlit app</text>
+<text class="l" xml:space="preserve" x="572" y="126">  role legal-search-st (15 min)</text>
+<text class="l" xml:space="preserve" x="572" y="143">KV legal-search-st/turbopuffer</text>
+<text class="l" xml:space="preserve" x="572" y="160">  key + password, by hand</text>
+<text class="l" xml:space="preserve" x="572" y="177">KV legal-search-st/config</text>
+<text class="l" xml:space="preserve" x="572" y="194">  firm list, by Terraform</text>
+<rect class="box " x="20" y="400" width="150" height="64" rx="10"/>
+<text class="t" x="32" y="423">Browser</text>
+<text class="l" xml:space="preserve" x="32" y="444">the demo page</text>
+<rect class="box st" x="240" y="340" width="250" height="136" rx="10"/>
+<text class="t" x="252" y="363">Streamlit Community Cloud</text>
+<text class="l" xml:space="preserve" x="252" y="384">app.py</text>
+<text class="l" xml:space="preserve" x="252" y="401">Secrets: role ID + secret ID</text>
+<text class="l" xml:space="preserve" x="252" y="418">  (the one long-lived credential)</text>
+<text class="l" xml:space="preserve" x="252" y="435">&quot;Sync with Terraform&quot; button</text>
+<rect class="box tpuf" x="590" y="360" width="290" height="104" rx="10"/>
+<text class="t" x="602" y="383">turbopuffer</text>
+<text class="l" xml:space="preserve" x="602" y="404">one namespace per firm</text>
+<text class="mono" xml:space="preserve" x="602" y="421">legal-search-st-&lt;firm&gt;</text>
+<text class="l" xml:space="preserve" x="602" y="438">hybrid: vector + BM25, RRF</text>
+<path class="a" d="M190,88 L256,88" marker-end="url(#ah)"/><circle class="n" cx="223" cy="76" r="9"/><text class="nt" x="223" y="80" text-anchor="middle">1</text><text class="al" x="236" y="80" text-anchor="start"></text>
+<path class="a" d="M480,78 L556,78" marker-end="url(#ah)"/><circle class="n" cx="518" cy="66" r="9"/><text class="nt" x="518" y="70" text-anchor="middle">2</text><text class="al" x="531" y="70" text-anchor="start"></text>
+<text class="al" x="490" y="103">workload</text><text class="al" x="490" y="117">identity</text>
+<path class="a d" d="M60,140 L60,300 L300,300 L300,336" marker-end="url(#ahd)"/><circle class="n d" cx="75" cy="292" r="9"/><text class="nt" x="75" y="296" text-anchor="middle">3</text><text class="al d" x="88" y="296" text-anchor="start">paste role ID + secret ID</text>
+<path class="a" d="M170,432 L236,432" marker-end="url(#ah)"/><circle class="n" cx="203" cy="420" r="9"/><text class="nt" x="203" y="424" text-anchor="middle">4</text><text class="al" x="216" y="424" text-anchor="start"></text>
+<path class="a" d="M490,360 L600,282" marker-end="url(#ah)"/><circle class="n" cx="545" cy="321" r="9"/><text class="nt" x="545" y="325" text-anchor="middle">5</text><text class="al" x="558" y="325" text-anchor="start"></text>
+<text class="al" x="610" y="304">AppRole login → token</text><text class="al" x="610" y="318">read key (cached)</text>
+<path class="a" d="M490,440 L586,440" marker-end="url(#ah)"/><circle class="n" cx="538" cy="428" r="9"/><text class="nt" x="538" y="432" text-anchor="middle">6</text><text class="al" x="551" y="432" text-anchor="start"></text>
+<text class="al" x="500" y="460">query</text>
+<path class="a d" d="M105,48 L105,38 L720,38 L720,44" marker-end="url(#ahd)"/><circle class="n d" cx="400" cy="38" r="9"/><text class="nt" x="400" y="42" text-anchor="middle">0</text><text class="al d" x="415" y="32">vault kv put (key, once, by hand)</text>
+</svg>
