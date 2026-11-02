@@ -69,7 +69,7 @@ The script is safe to re-run; every step is a Terraform apply.
 
 Running locally instead: `pip install -r requirements.txt` and `streamlit run app.py`; it reads the same `.streamlit/secrets.toml`.
 
-**When you're done for the day:** `./scripts/teardown.sh` destroys the workspace resources, the bootstrap config and the cluster, so nothing in HCP keeps billing. `setup.sh` rebuilds it all (you'll need to write the turbopuffer key again).
+**When you're done for the day:** `./scripts/teardown.sh` deletes the firms' turbopuffer namespaces, then destroys the workspace resources, the bootstrap config and the cluster, so nothing keeps billing. `setup.sh` rebuilds it all (you'll need to write the turbopuffer key again).
 
 Prefer doing it by hand? Create the cluster in the HCP portal, then run `bootstrap/` and `terraform/` yourself with the same variables the script passes.
 
@@ -108,11 +108,12 @@ set -a; source .env; set +a
 
 **1. Tear down** (about 10 minutes): `./scripts/teardown.sh`
 
-1. Starts a destroy run in HCP Terraform: the app's login, its policy and the firm list are removed from Vault.
-2. Deletes the workspace, the Vault trust for HCP Terraform, and the secret store holding the turbopuffer key.
-3. Deletes the Vault cluster and its network. HCP billing stops here.
+1. Deletes the firms' turbopuffer namespaces and their contracts (`scripts/delete-namespaces.sh`), using the key from Vault while Vault still exists. Set `KEEP_NAMESPACES=1` to keep them; `./scripts/delete-namespaces.sh --dry-run` lists what would go.
+2. Starts a destroy run in HCP Terraform: the app's login, its policy and the firm list are removed from Vault.
+3. Deletes the workspace, the Vault trust for HCP Terraform, and the secret store holding the turbopuffer key.
+4. Deletes the Vault cluster and its network. HCP billing stops here.
 
-Left in place, all free or nearly free: your HCP and HCP Terraform organizations, the service principal, the GitHub repo and GitHub App, the Streamlit app, and the firms' turbopuffer namespaces.
+Left in place, all free: your HCP and HCP Terraform organizations, the service principal, the GitHub repo and GitHub App, and the Streamlit app.
 
 **2. Set up again** (about 15 minutes): `./scripts/setup.sh`
 
@@ -128,7 +129,7 @@ The new cluster has a new address and new credentials, so update Streamlit:
 pbcopy < .streamlit/secrets.toml
 ```
 
-Then in Streamlit: your app → **Settings → Secrets** → paste over the old contents → **Save**. Open the app, log in, and press **Sync with Terraform**. The firms show as *live*.
+Then in Streamlit: your app → **Settings → Secrets** → paste over the old contents → **Save**. Open the app and log in. The firms show as *to seed*; press **Sync with Terraform** to create their namespaces and load the contracts.
 
 **3. Demo adding a firm** (about 3 minutes)
 
@@ -158,4 +159,4 @@ Then in Streamlit: your app → **Settings → Secrets** → paste over the old 
 
 ## Cleaning up
 
-To also delete the firms' turbopuffer namespaces, remove every firm from `terraform.tfvars`, run `setup.sh`, and press **Sync with Terraform**. Then run `./scripts/teardown.sh`.
+`./scripts/teardown.sh` removes everything, including the firms' turbopuffer namespaces. To keep the namespaces, run it with `KEEP_NAMESPACES=1`.

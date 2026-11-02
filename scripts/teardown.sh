@@ -2,10 +2,10 @@
 # Removes everything setup.sh created, in reverse order, so you stop paying
 # for the Vault cluster. Run ./scripts/setup.sh again to rebuild.
 #
-# The firms' turbopuffer namespaces are left in place: they hold a few
-# hundred KB and cost almost nothing. To delete them first, remove every firm
-# from terraform/terraform.tfvars, run setup.sh, and press "Sync with
-# Terraform" in the app.
+# It starts by deleting the firms' turbopuffer namespaces (and their contracts),
+# reading the turbopuffer key from Vault while Vault still exists. Set
+# KEEP_NAMESPACES=1 to leave them. After the next setup.sh, press "Sync with
+# Terraform" in the app to load the firms again.
 #
 # Needs the same environment variables as setup.sh.
 
@@ -42,7 +42,14 @@ fi
 GH_APP_ID=""
 [ -n "${VCS_REPO:-}" ] && GH_APP_ID="$(./scripts/github-app-id.sh)"
 
-echo "==> 1/3 Workspace resources (AppRole, policy, firm list)"
+echo "==> 1/4 turbopuffer namespaces"
+if [ -n "${KEEP_NAMESPACES:-}" ]; then
+  echo "    kept (KEEP_NAMESPACES is set)"
+else
+  ./scripts/delete-namespaces.sh
+fi
+
+echo "==> 2/4 Workspace resources (AppRole, policy, firm list)"
 if [ -n "${VCS_REPO:-}" ]; then
   ./scripts/tfc-run.sh legal-search-streamlit "teardown.sh" destroy || echo "    skipped (workspace already gone?)"
 else
@@ -50,7 +57,7 @@ else
     echo "    skipped (workspace already gone?)"
 fi
 
-echo "==> 2/3 Workspace, Vault trust and KV mount (this deletes the turbopuffer key from Vault)"
+echo "==> 3/4 Workspace, Vault trust and KV mount (this deletes the turbopuffer key from Vault)"
 TF_WORKSPACE=legal-search-streamlit-bootstrap terraform -chdir=bootstrap destroy -input=false -auto-approve \
   -var "tfc_organization=$TF_CLOUD_ORGANIZATION" \
   -var "vault_addr=$VAULT_ADDR" \
@@ -59,7 +66,7 @@ TF_WORKSPACE=legal-search-streamlit-bootstrap terraform -chdir=bootstrap destroy
   -var "vcs_repo=${VCS_REPO:-}" \
   -var "vcs_github_app_installation_id=$GH_APP_ID"
 
-echo "==> 3/3 HCP Vault cluster and network"
+echo "==> 4/4 HCP Vault cluster and network"
 TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp destroy -input=false -auto-approve
 rm -f .streamlit/secrets.toml
 echo "Done. Nothing in HCP is billing now."
