@@ -55,13 +55,17 @@ VAULT_ADDR="$(TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp output 
 VAULT_NAMESPACE="$(TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp output -raw vault_namespace)"; export VAULT_NAMESPACE
 VAULT_TOKEN="$(TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp output -raw admin_token)"; export VAULT_TOKEN     # 6-hour admin token, never printed
 
+GH_APP_ID=""
+[ -n "${VCS_REPO:-}" ] && GH_APP_ID="$(./scripts/github-app-id.sh)"
+
 echo "==> 2/5 Vault trust for HCP Terraform, KV mount, and the workspace"
 TF_WORKSPACE=legal-search-streamlit-bootstrap terraform -chdir=bootstrap init -input=false -upgrade >/dev/null
 TF_WORKSPACE=legal-search-streamlit-bootstrap terraform -chdir=bootstrap apply -input=false -auto-approve \
   -var "tfc_organization=$TF_CLOUD_ORGANIZATION" \
   -var "vault_addr=$VAULT_ADDR" \
   -var "vault_namespace=$VAULT_NAMESPACE" \
-  -var "vcs_repo=${VCS_REPO:-}"
+  -var "vcs_repo=${VCS_REPO:-}" \
+  -var "vcs_github_app_installation_id=$GH_APP_ID"
 
 echo "==> 3/5 turbopuffer key in Vault"
 if [ -n "${TURBOPUFFER_API_KEY:-}" ]; then

@@ -41,7 +41,7 @@ Everything, including the Vault cluster, is Terraform. One script runs it in ord
 2. In it, create a project (e.g. `tpuf-demos`). Under that project's **Access control (IAM) → Service principals**, create one with the **Contributor** role and generate a key. Scoping it to the project means it can't touch anything else.
 3. Create an HCP Terraform organization, and a user token with an expiry date (User settings → Tokens).
 4. Have a turbopuffer API key ready.
-5. Optional, for the commit-driven demo: in HCP Terraform, **Organization settings → Version Control → Providers → Add a VCS provider → GitHub.com**, and authorize it. Then set `VCS_REPO` below.
+5. Optional, for the commit-driven demo: connect HCP Terraform to GitHub once. Either use the built-in **GitHub App** (connect any workspace to GitHub.com (GitHub App) in the UI and install the app on your account), or add an OAuth provider under **Organization settings → Version Control → Providers**. Then set `VCS_REPO` below; `setup.sh` finds whichever connection exists.
 
 **Run it** (needs `terraform`, `vault`, `curl` and `python3`)
 

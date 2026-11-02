@@ -25,6 +25,9 @@ VAULT_ADDR="$(TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp output 
 VAULT_NAMESPACE="$(TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp output -raw vault_namespace)"; export VAULT_NAMESPACE
 VAULT_TOKEN="$(TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp output -raw admin_token)"; export VAULT_TOKEN
 
+GH_APP_ID=""
+[ -n "${VCS_REPO:-}" ] && GH_APP_ID="$(./scripts/github-app-id.sh)"
+
 echo "==> 1/3 Workspace resources (AppRole, policy, firm list)"
 if [ -n "${VCS_REPO:-}" ]; then
   ./scripts/tfc-run.sh legal-search-streamlit "teardown.sh" destroy || echo "    skipped (workspace already gone?)"
@@ -38,7 +41,8 @@ TF_WORKSPACE=legal-search-streamlit-bootstrap terraform -chdir=bootstrap destroy
   -var "tfc_organization=$TF_CLOUD_ORGANIZATION" \
   -var "vault_addr=$VAULT_ADDR" \
   -var "vault_namespace=$VAULT_NAMESPACE" \
-  -var "vcs_repo=${VCS_REPO:-}"
+  -var "vcs_repo=${VCS_REPO:-}" \
+  -var "vcs_github_app_installation_id=$GH_APP_ID"
 
 echo "==> 3/3 HCP Vault cluster and network"
 TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp destroy -input=false -auto-approve

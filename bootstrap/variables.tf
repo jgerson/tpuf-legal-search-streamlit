@@ -34,6 +34,12 @@ variable "vcs_repo" {
   default     = ""
 }
 
+variable "vcs_github_app_installation_id" {
+  description = "Installation ID (ghain-...) of HCP Terraform's GitHub App on your GitHub account. scripts/setup.sh looks it up; leave empty to use an OAuth VCS provider instead."
+  type        = string
+  default     = ""
+}
+
 variable "vcs_oauth_token_id" {
   description = "OAuth token ID (ot-...) of your HCP Terraform GitHub connection. Leave empty to find it automatically."
   type        = string

@@ -87,17 +87,26 @@ data "tfe_project" "p" {
 
 # With vcs_repo set, the workspace is driven by GitHub: a commit that touches
 # terraform/ (e.g. adding a firm to terraform.tfvars) starts a plan, and the
-# plan waits for someone to click "Confirm & apply". The GitHub connection is
-# found automatically (Organization settings -> Version Control -> Providers)
-# unless vcs_oauth_token_id is given.
+# plan waits for someone to click "Confirm & apply".
+#
+# Two ways to reach GitHub, and scripts/setup.sh picks whichever exists:
+#   - HCP Terraform's GitHub App (vcs_github_app_installation_id, "ghain-...")
+#   - an OAuth VCS provider from Organization settings -> Version Control ->
+#     Providers (vcs_oauth_token_id, "ot-...", found automatically if empty)
+locals {
+  use_github_app = var.vcs_github_app_installation_id != ""
+}
+
 data "tfe_oauth_client" "github" {
-  count            = var.vcs_repo != "" && var.vcs_oauth_token_id == "" ? 1 : 0
+  count            = var.vcs_repo != "" && !local.use_github_app && var.vcs_oauth_token_id == "" ? 1 : 0
   organization     = var.tfc_organization
   service_provider = "github"
 }
 
 locals {
-  vcs_oauth_token_id = var.vcs_oauth_token_id != "" ? var.vcs_oauth_token_id : try(data.tfe_oauth_client.github[0].oauth_token_id, "")
+  vcs_oauth_token_id = local.use_github_app ? null : (
+    var.vcs_oauth_token_id != "" ? var.vcs_oauth_token_id : try(data.tfe_oauth_client.github[0].oauth_token_id, null)
+  )
 }
 
 resource "tfe_workspace" "app" {
@@ -115,9 +124,10 @@ resource "tfe_workspace" "app" {
   dynamic "vcs_repo" {
     for_each = var.vcs_repo == "" ? [] : [1]
     content {
-      identifier     = var.vcs_repo
-      oauth_token_id = local.vcs_oauth_token_id
-      branch         = "main"
+      identifier                 = var.vcs_repo
+      oauth_token_id             = local.vcs_oauth_token_id
+      github_app_installation_id = local.use_github_app ? var.vcs_github_app_installation_id : null
+      branch                     = "main"
     }
   }
 }
