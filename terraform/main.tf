@@ -11,6 +11,13 @@
 
 terraform {
   required_version = ">= 1.6"
+
+  # Runs remotely in HCP Terraform. The organization and workspace come from
+  # TF_CLOUD_ORGANIZATION and TF_WORKSPACE (scripts/setup.sh sets them), so
+  # nothing org-specific is committed. With a VCS-connected workspace, pushes
+  # trigger runs and this block is only used for `terraform plan`.
+  cloud {}
+
   required_providers {
     vault = { source = "hashicorp/vault", version = "~> 5.0" }
   }

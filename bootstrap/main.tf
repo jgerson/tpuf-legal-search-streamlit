@@ -1,5 +1,5 @@
-# One-time setup, run from your laptop with:
-#   - VAULT_TOKEN: an HCP Vault admin token (HCP portal -> your cluster -> "New admin token")
+# Step 2 of setup (scripts/setup.sh runs it). Needs:
+#   - VAULT_TOKEN: an HCP Vault admin token (setup.sh takes it from ../hcp; by hand: HCP portal -> cluster -> "New admin token")
 #   - TFE_TOKEN:   an HCP Terraform user or team token
 #
 # It lets HCP Terraform runs log into Vault with workload identity (JWT auth,
@@ -9,6 +9,12 @@
 
 terraform {
   required_version = ">= 1.6"
+
+  # State lives in HCP Terraform (workspace "legal-search-streamlit-bootstrap", local execution: the
+  # plan runs where you run it, with your credentials; only the state is
+  # stored remotely). scripts/setup.sh creates the workspace and sets
+  # TF_CLOUD_ORGANIZATION and TF_WORKSPACE.
+  cloud {}
   required_providers {
     vault = { source = "hashicorp/vault", version = "~> 5.0" }
     tfe   = { source = "hashicorp/tfe", version = "~> 0.70" }

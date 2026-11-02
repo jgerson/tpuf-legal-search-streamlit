@@ -33,36 +33,43 @@ The difference is identity. Streamlit Cloud gives the app no cloud identity to p
 
 ## Setup
 
-You need: an HCP Vault cluster (public endpoint), an HCP Terraform org, a turbopuffer API key, a Streamlit Community Cloud account.
+Everything, including the Vault cluster, is Terraform. One script runs it in order.
 
-**1. Bootstrap (once, from your laptop)**
+**Before you start** (in a browser, about 10 minutes)
 
-```bash
-export VAULT_TOKEN=...   # HCP Vault admin token
-export TFE_TOKEN=...     # HCP Terraform token
-cd bootstrap && terraform init
-terraform apply -var tfc_organization=your-org -var vault_addr=https://your-cluster...:8200
-```
+1. Create an HCP organization. New ones get trial credits that cover the Vault cluster.
+2. In it, create a project (e.g. `tpuf-demos`). Under that project's **Access control (IAM) → Service principals**, create one with the **Contributor** role and generate a key. Scoping it to the project means it can't touch anything else.
+3. Create an HCP Terraform organization, and a user token with an expiry date (User settings → Tokens).
+4. Have a turbopuffer API key ready.
 
-This creates the KV mount, the JWT auth trust for HCP Terraform (scoped to this one workspace), and the workspace with `TFC_VAULT_PROVIDER_AUTH=true`.
-
-**2. Write the secret by hand** (so it never touches Terraform state)
+**Run it** (needs `terraform`, `vault` and `curl`)
 
 ```bash
-export VAULT_ADDR=https://your-cluster...:8200 VAULT_NAMESPACE=admin
-vault kv put -mount=legal-search-st turbopuffer api_key=tpuf_... demo_password=choose-one
+export HCP_CLIENT_ID=...  HCP_CLIENT_SECRET=...  HCP_PROJECT_ID=...
+export TFE_TOKEN=...  TF_CLOUD_ORGANIZATION=your-org
+export TURBOPUFFER_API_KEY=tpuf_...  DEMO_PASSWORD=choose-one   # optional, see below
+./scripts/setup.sh
 ```
 
-**3. Run the workspace** (push to the connected repo, or `terraform apply` from `terraform/` with a `cloud {}` block). Then get the app's credentials:
+| Step | What happens | Where state lives |
+|---|---|---|
+| 1 | `hcp/` creates a HashiCorp Virtual Network, a Development-tier Vault cluster with a public endpoint, and a 6-hour admin token | HCP Terraform workspace `tpuf-demos-vault-cluster` (local execution) |
+| 2 | `bootstrap/` uses that token once: KV mount, JWT trust for HCP Terraform, and the `legal-search-streamlit` workspace with Vault dynamic credentials | `legal-search-streamlit-bootstrap` (local execution) |
+| 3 | Writes the turbopuffer key into Vault, or stops and tells you how to add it yourself | Vault only, never Terraform state |
+| 4 | Runs the `legal-search-streamlit` workspace remotely: AppRole, policy, firm list | `legal-search-streamlit` |
+| 5 | Writes `.streamlit/secrets.toml` (gitignored) with the role ID and a fresh secret ID | your machine |
 
-```bash
-terraform output role_id
-vault write -f -field=secret_id auth/approle-legal-search/role/legal-search-st/secret-id
-```
+If someone else runs the script for you, leave `TURBOPUFFER_API_KEY` unset. The script stops at step 3 with instructions for adding the key yourself through the Vault web UI, and you re-run it to finish. That way the key only ever goes from you to Vault.
 
-**4. Deploy on Streamlit Cloud** with `app.py` as the entry point, and paste `VAULT_ADDR`, `VAULT_NAMESPACE`, `VAULT_ROLE_ID` and `VAULT_SECRET_ID` into App settings → Secrets (see `.streamlit/secrets.toml.example`). Open the app and press **Sync with Terraform** once to seed the firms.
+The script is safe to re-run; every step is a Terraform apply.
 
-Running locally: `pip install -r requirements.txt`, copy the example to `.streamlit/secrets.toml`, `streamlit run app.py`.
+**Deploy on Streamlit Community Cloud** with `app.py` as the entry point, and paste `.streamlit/secrets.toml` into App settings → Secrets. Open the app and press **Sync with Terraform** to seed the firms. If your turbopuffer account isn't in `aws-us-east-1`, add `TURBOPUFFER_REGION = "..."` to the secrets.
+
+Running locally instead: `pip install -r requirements.txt` and `streamlit run app.py`; it reads the same `.streamlit/secrets.toml`.
+
+**When you're done for the day:** `./scripts/teardown.sh` destroys the workspace resources, the bootstrap config and the cluster, so nothing in HCP keeps billing. `setup.sh` rebuilds it all (you'll need to write the turbopuffer key again).
+
+Prefer doing it by hand? Create the cluster in the HCP portal, then run `bootstrap/` and `terraform/` yourself with the same variables the script passes.
 
 ## Demo script (about 10 minutes)
 
@@ -91,4 +98,4 @@ Running locally: `pip install -r requirements.txt`, copy the example to `.stream
 
 ## Cleaning up
 
-Remove all firms from `terraform.tfvars`, run, press **Sync with Terraform** (deletes the namespaces), then destroy the workspace and `terraform destroy` in `bootstrap/`.
+To also delete the firms' turbopuffer namespaces, remove every firm from `terraform.tfvars`, run `setup.sh`, and press **Sync with Terraform**. Then run `./scripts/teardown.sh`.
