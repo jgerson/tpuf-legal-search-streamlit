@@ -7,18 +7,22 @@
 #   export TF_CLOUD_ORGANIZATION=your-hcp-terraform-org
 #   ./scripts/setup.sh
 #
+# Optional: VCS_REPO (e.g. jgerson/tpuf-legal-search-streamlit) connects the
+# workspace to GitHub, so a commit that adds a firm starts a run. Add GitHub
+# under HCP Terraform Organization settings -> Version Control -> Providers first.
+#
 # Optional: TURBOPUFFER_API_KEY and DEMO_PASSWORD to write the app secret in
 # step 3. Leave them unset if someone else runs this script for you, and
 # write the secret yourself (the script tells you how).
 #
-# Needs: terraform, vault and curl on your PATH.
+# Needs: terraform, vault, curl and python3 on your PATH.
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 need() { [ -n "${!1:-}" ] || { echo "Set $1 first (see the top of this script)." >&2; exit 1; }; }
 for v in HCP_CLIENT_ID HCP_CLIENT_SECRET HCP_PROJECT_ID TFE_TOKEN TF_CLOUD_ORGANIZATION; do need "$v"; done
-for c in terraform vault curl; do command -v "$c" >/dev/null || { echo "Install $c first." >&2; exit 1; }; done
+for c in terraform vault curl python3; do command -v "$c" >/dev/null || { echo "Install $c first." >&2; exit 1; }; done
 
 WORKSPACE=legal-search-streamlit
 KV_MOUNT=legal-search-st
@@ -56,7 +60,8 @@ TF_WORKSPACE=legal-search-streamlit-bootstrap terraform -chdir=bootstrap init -i
 TF_WORKSPACE=legal-search-streamlit-bootstrap terraform -chdir=bootstrap apply -input=false -auto-approve \
   -var "tfc_organization=$TF_CLOUD_ORGANIZATION" \
   -var "vault_addr=$VAULT_ADDR" \
-  -var "vault_namespace=$VAULT_NAMESPACE"
+  -var "vault_namespace=$VAULT_NAMESPACE" \
+  -var "vcs_repo=${VCS_REPO:-}"
 
 echo "==> 3/5 turbopuffer key in Vault"
 if [ -n "${TURBOPUFFER_API_KEY:-}" ]; then
@@ -85,7 +90,13 @@ fi
 echo "==> 4/5 Run the HCP Terraform workspace ($WORKSPACE)"
 export TF_WORKSPACE="$WORKSPACE"
 terraform -chdir=terraform init -input=false >/dev/null
-terraform -chdir=terraform apply -input=false -auto-approve
+if [ -n "${VCS_REPO:-}" ]; then
+  # Connected to GitHub: the run uses the code on the main branch. Push your
+  # changes first if you edited anything under terraform/.
+  ./scripts/tfc-run.sh "$WORKSPACE" "setup.sh"
+else
+  terraform -chdir=terraform apply -input=false -auto-approve
+fi
 
 echo "==> 5/5 Streamlit credentials"
 ROLE_ID="$(terraform -chdir=terraform output -raw role_id)"

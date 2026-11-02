@@ -85,18 +85,38 @@ data "tfe_project" "p" {
   name = var.tfc_project
 }
 
+# With vcs_repo set, the workspace is driven by GitHub: a commit that touches
+# terraform/ (e.g. adding a firm to terraform.tfvars) starts a plan, and the
+# plan waits for someone to click "Confirm & apply". The GitHub connection is
+# found automatically (Organization settings -> Version Control -> Providers)
+# unless vcs_oauth_token_id is given.
+data "tfe_oauth_client" "github" {
+  count            = var.vcs_repo != "" && var.vcs_oauth_token_id == "" ? 1 : 0
+  organization     = var.tfc_organization
+  service_provider = "github"
+}
+
+locals {
+  vcs_oauth_token_id = var.vcs_oauth_token_id != "" ? var.vcs_oauth_token_id : try(data.tfe_oauth_client.github[0].oauth_token_id, "")
+}
+
 resource "tfe_workspace" "app" {
   name              = var.workspace_name
   project_id        = data.tfe_project.p.id
   working_directory = "terraform"
   description       = "Legal contract search on Streamlit: turbopuffer + Vault AppRole"
   queue_all_runs    = false
+  auto_apply        = false # every change is reviewed: the plan waits for "Confirm & apply"
+
+  # Only commits that change the Terraform code or the firm list start a run.
+  file_triggers_enabled = var.vcs_repo != ""
+  trigger_patterns      = var.vcs_repo != "" ? ["terraform/**/*"] : null
 
   dynamic "vcs_repo" {
     for_each = var.vcs_repo == "" ? [] : [1]
     content {
       identifier     = var.vcs_repo
-      oauth_token_id = var.vcs_oauth_token_id
+      oauth_token_id = local.vcs_oauth_token_id
       branch         = "main"
     }
   }

@@ -26,14 +26,19 @@ VAULT_NAMESPACE="$(TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp ou
 VAULT_TOKEN="$(TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp output -raw admin_token)"; export VAULT_TOKEN
 
 echo "==> 1/3 Workspace resources (AppRole, policy, firm list)"
-TF_WORKSPACE=legal-search-streamlit terraform -chdir=terraform destroy -input=false -auto-approve || \
-  echo "    skipped (workspace already gone?)"
+if [ -n "${VCS_REPO:-}" ]; then
+  ./scripts/tfc-run.sh legal-search-streamlit "teardown.sh" destroy || echo "    skipped (workspace already gone?)"
+else
+  TF_WORKSPACE=legal-search-streamlit terraform -chdir=terraform destroy -input=false -auto-approve || \
+    echo "    skipped (workspace already gone?)"
+fi
 
 echo "==> 2/3 Workspace, Vault trust and KV mount (this deletes the turbopuffer key from Vault)"
 TF_WORKSPACE=legal-search-streamlit-bootstrap terraform -chdir=bootstrap destroy -input=false -auto-approve \
   -var "tfc_organization=$TF_CLOUD_ORGANIZATION" \
   -var "vault_addr=$VAULT_ADDR" \
-  -var "vault_namespace=$VAULT_NAMESPACE"
+  -var "vault_namespace=$VAULT_NAMESPACE" \
+  -var "vcs_repo=${VCS_REPO:-}"
 
 echo "==> 3/3 HCP Vault cluster and network"
 TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp destroy -input=false -auto-approve

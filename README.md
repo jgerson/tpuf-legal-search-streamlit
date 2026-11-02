@@ -41,13 +41,15 @@ Everything, including the Vault cluster, is Terraform. One script runs it in ord
 2. In it, create a project (e.g. `tpuf-demos`). Under that project's **Access control (IAM) → Service principals**, create one with the **Contributor** role and generate a key. Scoping it to the project means it can't touch anything else.
 3. Create an HCP Terraform organization, and a user token with an expiry date (User settings → Tokens).
 4. Have a turbopuffer API key ready.
+5. Optional, for the commit-driven demo: in HCP Terraform, **Organization settings → Version Control → Providers → Add a VCS provider → GitHub.com**, and authorize it. Then set `VCS_REPO` below.
 
-**Run it** (needs `terraform`, `vault` and `curl`)
+**Run it** (needs `terraform`, `vault`, `curl` and `python3`)
 
 ```bash
 export HCP_CLIENT_ID=...  HCP_CLIENT_SECRET=...  HCP_PROJECT_ID=...
 export TFE_TOKEN=...  TF_CLOUD_ORGANIZATION=your-org
 export TURBOPUFFER_API_KEY=tpuf_...  DEMO_PASSWORD=choose-one   # optional, see below
+export VCS_REPO=jgerson/tpuf-legal-search-streamlit             # optional: GitHub-driven runs
 ./scripts/setup.sh
 ```
 
@@ -56,7 +58,7 @@ export TURBOPUFFER_API_KEY=tpuf_...  DEMO_PASSWORD=choose-one   # optional, see 
 | 1 | `hcp/` creates a HashiCorp Virtual Network, a Development-tier Vault cluster with a public endpoint, and a 6-hour admin token | HCP Terraform workspace `tpuf-demos-vault-cluster` (local execution) |
 | 2 | `bootstrap/` uses that token once: KV mount, JWT trust for HCP Terraform, and the `legal-search-streamlit` workspace with Vault dynamic credentials | `legal-search-streamlit-bootstrap` (local execution) |
 | 3 | Writes the turbopuffer key into Vault, or stops and tells you how to add it yourself | Vault only, never Terraform state |
-| 4 | Runs the `legal-search-streamlit` workspace remotely: AppRole, policy, firm list | `legal-search-streamlit` |
+| 4 | Runs the `legal-search-streamlit` workspace remotely: AppRole, policy, firm list. With `VCS_REPO` set, the workspace is connected to GitHub and the run is started and confirmed through the API (`scripts/tfc-run.sh`), using the code on `main` | `legal-search-streamlit` |
 | 5 | Writes `.streamlit/secrets.toml` (gitignored) with the role ID and a fresh secret ID | your machine |
 
 If someone else runs the script for you, leave `TURBOPUFFER_API_KEY` unset. The script stops at step 3 with instructions for adding the key yourself through the Vault web UI, and you re-run it to finish. That way the key only ever goes from you to Vault.
@@ -76,7 +78,11 @@ Prefer doing it by hand? Create the cluster in the HCP portal, then run `bootstr
 1. **The workspace.** Show HCP Terraform's variables: no Vault token, just `TFC_VAULT_*` settings. Each run logs into Vault with a short-lived workload identity token.
 2. **Search.** Pick a firm, ask *"what's our liability cap and what's excluded?"*, switch Hybrid / Vector / BM25, add filters, open *SDK call*.
 3. **Tenancy.** Switch firm: same question, different contracts, separate namespace.
-4. **Onboard a firm.** Add one to `terraform/terraform.tfvars`, push. After the run, the sidebar shows the new firm as *to seed* and a plan ("seed 1, delete 0"). Press **Sync with Terraform**.
+4. **Onboard a firm with a commit** (needs `VCS_REPO`). On GitHub, edit `terraform/terraform.tfvars` and add a line such as `"cobalt-mercer" = { name = "Cobalt Mercer LLP" }`, then commit to `main`.
+   - HCP Terraform starts a run by itself, because the commit touched `terraform/`. The plan shows one change: the firm list in Vault is updated in place.
+   - Click **Confirm & apply**. Auto-apply is off on purpose, so every tenant change is reviewed.
+   - In the app, press **Re-read key now** (it also refreshes the firm list). The sidebar shows `legal-search-st-cobalt-mercer` as *to seed*. Press **Sync with Terraform**, pick the firm and search. The first query may be slightly slower while turbopuffer loads the new namespace into cache.
+   - To offboard, delete the line and commit. After you confirm the run, the firm shows as *to delete* and Sync removes its namespace.
 5. **Rotate the key.** Create a second turbopuffer key, `vault kv put` it, press **Re-read key now**. Version and key prefix change in the sidebar; search keeps working. Revoke the old key; the 401 handler covers anything still holding it.
 6. **Talk about secret zero.** The secret ID in Streamlit is long-lived (30 days here) and can't be bound to an IP, because Streamlit Cloud's egress isn't stable. On AWS, GCP or Kubernetes the app proves its identity with its platform role instead. That's the AWS version of this demo.
 

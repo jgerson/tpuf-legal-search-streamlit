@@ -29,13 +29,13 @@ variable "vault_namespace" {
 }
 
 variable "vcs_repo" {
-  description = "Optional GitHub repo for VCS-driven runs, e.g. \"jgerson/tpuf-legal-search-streamlit\"."
+  description = "GitHub repo that drives the workspace, e.g. \"jgerson/tpuf-legal-search-streamlit\". Empty means runs are started from the CLI instead."
   type        = string
   default     = ""
 }
 
 variable "vcs_oauth_token_id" {
-  description = "OAuth token ID of your HCP Terraform VCS connection. Needed only with vcs_repo."
+  description = "OAuth token ID (ot-...) of your HCP Terraform GitHub connection. Leave empty to find it automatically."
   type        = string
   default     = ""
 }
