@@ -15,6 +15,7 @@ cd "$(dirname "$0")/.."
 for v in HCP_CLIENT_ID HCP_CLIENT_SECRET HCP_PROJECT_ID TFE_TOKEN TF_CLOUD_ORGANIZATION; do
   [ -n "${!v:-}" ] || { echo "Set $v first." >&2; exit 1; }
 done
+for c in terraform curl python3; do command -v "$c" >/dev/null || { echo "Install $c first." >&2; exit 1; }; done
 export TF_TOKEN_app_terraform_io="$TFE_TOKEN" TF_IN_AUTOMATION=1
 for d in hcp bootstrap terraform; do
   ws=tpuf-demos-vault-cluster; [ "$d" = bootstrap ] && ws=legal-search-streamlit-bootstrap; [ "$d" = terraform ] && ws=legal-search-streamlit

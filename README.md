@@ -65,7 +65,7 @@ If someone else runs the script for you, leave `TURBOPUFFER_API_KEY` unset. The 
 
 The script is safe to re-run; every step is a Terraform apply.
 
-**Deploy on Streamlit Community Cloud** with `app.py` as the entry point, and paste `.streamlit/secrets.toml` into App settings → Secrets. Open the app and press **Sync with Terraform** to seed the firms. If your turbopuffer account isn't in `aws-us-east-1`, add `TURBOPUFFER_REGION = "..."` to the secrets.
+**Deploy on Streamlit Community Cloud** with `app.py` as the entry point and Python 3.12 (under Advanced settings), and paste `.streamlit/secrets.toml` into App settings → Secrets. Open the app and press **Sync with Terraform** to seed the firms. If your turbopuffer account isn't in `aws-us-east-1`, add `TURBOPUFFER_REGION = "..."` to the secrets.
 
 Running locally instead: `pip install -r requirements.txt` and `streamlit run app.py`; it reads the same `.streamlit/secrets.toml`.
 
@@ -94,8 +94,8 @@ The whole cycle from your Mac's Terminal: tear down, set up again, then demo add
 
 ```bash
 brew tap hashicorp/tap && brew install hashicorp/tap/terraform hashicorp/tap/vault
-cd ~/path/to/tpuf-legal-search-streamlit
-git pull                      # latest scripts and firm list
+git clone https://github.com/jgerson/tpuf-legal-search-streamlit   # first time; afterwards `git pull`
+cd tpuf-legal-search-streamlit
 chmod +x scripts/*.sh
 cp env.template .env          # first time only, then fill it in
 ```
