@@ -25,6 +25,19 @@ VAULT_ADDR="$(TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp output 
 VAULT_NAMESPACE="$(TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp output -raw vault_namespace)"; export VAULT_NAMESPACE
 VAULT_TOKEN="$(TF_WORKSPACE=tpuf-demos-vault-cluster terraform -chdir=hcp output -raw admin_token)"; export VAULT_TOKEN
 
+# The HCP Terraform project for the workspace: TFC_PROJECT if set, otherwise
+# the org's only project, otherwise "Default Project".
+if [ -z "${TFC_PROJECT:-}" ]; then
+  TFC_PROJECT=$(curl -s -m 20 -H "Authorization: Bearer $TFE_TOKEN" \
+    "https://app.terraform.io/api/v2/organizations/$TF_CLOUD_ORGANIZATION/projects" |
+    python3 -c "import sys,json
+try:
+  n=[p['attributes']['name'] for p in json.load(sys.stdin)['data']]
+  print(n[0] if len(n)==1 else ('Default Project' if 'Default Project' in n or not n else ''))
+except Exception: print('Default Project')")
+  [ -n "$TFC_PROJECT" ] || { echo "Your org has several HCP Terraform projects. Set TFC_PROJECT to the one to use." >&2; exit 1; }
+fi
+
 GH_APP_ID=""
 [ -n "${VCS_REPO:-}" ] && GH_APP_ID="$(./scripts/github-app-id.sh)"
 
@@ -41,6 +54,7 @@ TF_WORKSPACE=legal-search-streamlit-bootstrap terraform -chdir=bootstrap destroy
   -var "tfc_organization=$TF_CLOUD_ORGANIZATION" \
   -var "vault_addr=$VAULT_ADDR" \
   -var "vault_namespace=$VAULT_NAMESPACE" \
+  -var "tfc_project=$TFC_PROJECT" \
   -var "vcs_repo=${VCS_REPO:-}" \
   -var "vcs_github_app_installation_id=$GH_APP_ID"
 
