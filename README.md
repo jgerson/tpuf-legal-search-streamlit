@@ -86,6 +86,60 @@ Prefer doing it by hand? Create the cluster in the HCP portal, then run `bootstr
 5. **Rotate the key.** Create a second turbopuffer key, `vault kv put` it, press **Re-read key now**. Version and key prefix change in the sidebar; search keeps working. Revoke the old key; the 401 handler covers anything still holding it.
 6. **Talk about secret zero.** The secret ID in Streamlit is long-lived (30 days here) and can't be bound to an IP, because Streamlit Cloud's egress isn't stable. On AWS, GCP or Kubernetes the app proves its identity with its platform role instead. That's the AWS version of this demo.
 
+## Rebuild and demo (runbook)
+
+The whole cycle from your Mac's Terminal: tear down, set up again, then demo adding a firm.
+
+**One-time prep**
+
+```bash
+brew tap hashicorp/tap && brew install hashicorp/tap/terraform hashicorp/tap/vault
+cd ~/path/to/tpuf-legal-search-streamlit
+git pull                      # latest scripts and firm list
+chmod +x scripts/*.sh
+cp env.template .env          # first time only, then fill it in
+```
+
+In `.env`, `HCP_PROJECT_ID` is just the project's ID, `TFE_TOKEN` is a **user** token, and `VCS_REPO=jgerson/tpuf-legal-search-streamlit` turns on GitHub-driven runs. In every new Terminal window, load it first:
+
+```bash
+set -a; source .env; set +a
+```
+
+**1. Tear down** (about 10 minutes): `./scripts/teardown.sh`
+
+1. Starts a destroy run in HCP Terraform: the app's login, its policy and the firm list are removed from Vault.
+2. Deletes the workspace, the Vault trust for HCP Terraform, and the secret store holding the turbopuffer key.
+3. Deletes the Vault cluster and its network. HCP billing stops here.
+
+Left in place, all free or nearly free: your HCP and HCP Terraform organizations, the service principal, the GitHub repo and GitHub App, the Streamlit app, and the firms' turbopuffer namespaces.
+
+**2. Set up again** (about 15 minutes): `./scripts/setup.sh`
+
+1. Creates a new Vault cluster (about 10 minutes).
+2. Sets up the Vault trust and recreates the workspace, connected to GitHub.
+3. Writes your turbopuffer key and demo password into Vault.
+4. Starts and confirms a run from GitHub: the app's login, its policy and the firm list.
+5. Writes new Streamlit secrets to `.streamlit/secrets.toml`.
+
+The new cluster has a new address and new credentials, so update Streamlit:
+
+```bash
+pbcopy < .streamlit/secrets.toml
+```
+
+Then in Streamlit: your app → **Settings → Secrets** → paste over the old contents → **Save**. Open the app, log in, and press **Sync with Terraform**. The firms show as *live*.
+
+**3. Demo adding a firm** (about 3 minutes)
+
+1. In the app, show the existing firms and run a search.
+2. On GitHub, edit `terraform/terraform.tfvars`, add `"cobalt-mercer" = { name = "Cobalt Mercer LLP" }`, and commit to `main`.
+3. In HCP Terraform, a run starts by itself. The plan shows one change: the firm list in Vault. Point out that the run logged into Vault with a short-lived identity and can't read the turbopuffer key. Click **Confirm & apply**.
+4. In the app, press **Re-read key now**. Cobalt Mercer shows as *to seed*. Press **Sync with Terraform**, pick it and search. The first query can be slightly slower while turbopuffer loads the new namespace into cache.
+5. Optional offboarding: delete the line, commit, confirm the run, and Sync. The namespace is removed.
+
+**Before each demo:** check that `terraform.tfvars` on GitHub doesn't already contain the firm you're about to add. If a rehearsal left it there, delete the line, commit, confirm, and Sync, so the onboarding starts fresh.
+
 ## Running costs (approximate, October 2026)
 
 | Item | Cost |
