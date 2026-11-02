@@ -6,4 +6,5 @@ firms = {
   "hartwell-ross" = { name = "Hartwell & Ross LLP" }
   "okafor-lind"   = { name = "Okafor Lind" }
   "bramble-quay"  = { name = "Bramble Quay Partners" }
+  "cobalt-mercer" = { name = "Cobalt Mercer LLP" }
 }
